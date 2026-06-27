@@ -1,0 +1,6 @@
+[submodule "lib/ArduinoMatrixScroller"]
+	path = lib/ArduinoMatrixScroller
+	url = git@github.com:Clpsplug/ArduinoMatrixScroller.git
+[submodule "lib/ht16k33-arduino"]
+	path = lib/ht16k33-arduino
+	url = git@github.com:Clpsplug/ht16k33-arduino.git
