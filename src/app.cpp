@@ -1,8 +1,6 @@
 #include "app.h"
 #include <Arduino.h>
 
-using namespace ECP::ArduinoMarquee;
-
 namespace
 {
 
@@ -67,14 +65,45 @@ void spiral16(HT16K33& matrix, const uint8_t value)
 
 }
 
+namespace ECP::ArduinoMarquee
+{
+struct App
+{
+    HT16K33 matrix = HT16K33();
+    Sprite16 smile = Sprite16(6, 6, 18, 18, 0, 0, 33, 30);
+    Sprite16 frown = Sprite16(6, 6, 18, 18, 0, 0, 30, 33);
+    bool initialized = false;
+    MatrixScroller scr;
+};
+
 AppRef getApplication()
 {
     static App app;
     return app;
 }
 
+void appSetup(App& app)
+{
+    if (!app.matrix.init(0x70))
+    {
+        app.initialized = false;
+        app.scr.setText("  I2C Error Display");
+        app.scr.begin();
+    } else
+    {
+        app.initialized = true;
+    }
+
+    delay(1000);
+}
+
 void appLoop(App& app)
 {
+    if (!app.initialized)
+    {
+        app.scr.update();
+        return;
+    }
 
     app.matrix.drawSprite16(app.smile, 1, 1);
     app.matrix.drawSprite16(app.frown, 9, 1);
@@ -131,4 +160,5 @@ void appLoop(App& app)
     }
     delay(1000);
     app.matrix.clear();
+}
 }
