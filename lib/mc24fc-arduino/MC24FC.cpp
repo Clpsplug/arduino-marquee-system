@@ -37,8 +37,7 @@ bool MC24FC::readByte(std::uint16_t address, std::uint8_t *data) {
 
     // Address the EEPROM as "Write" to write the random access address
     Wire.beginTransmission(_i2cAddr);
-    Wire.write(address_bytes[0]);
-    Wire.write(address_bytes[1]);
+    Wire.write(address_bytes, 2); // Make sure we use the 'non-string' overload. Don't omit the second arg.
     const auto ret = Wire.endTransmission(false); // Keep the line hot
     setError(ret);
     if (ret != 0) {

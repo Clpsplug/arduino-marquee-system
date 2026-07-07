@@ -68,7 +68,7 @@ enum class MC24FCError: std::uint32_t {
 class MC24FC {
 public:
     /**
-     * Specify specs of your EEPROM here.
+     * Specify the specs of your EEPROM here.
      * @param i2c_addr I2C address. It should be 0x50 ~ 0x57
      * @param max_capacity_bits Max capacity in bits
      * @param page_size Page size, or page buffer size in bytes
