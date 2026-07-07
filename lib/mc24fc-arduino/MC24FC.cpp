@@ -21,7 +21,7 @@ void MC24FC::init()
     Wire.begin();
     // Quick ACK check
     Wire.beginTransmission(_i2cAddr); // control byte, write op
-    auto ret = Wire.endTransmission(); // immediately end to check ACK
+    const auto ret = Wire.endTransmission(); // immediately end to check ACK
     setError(ret);
 }
 
@@ -42,7 +42,7 @@ bool MC24FC::readByte(std::uint16_t address, std::uint8_t* data)
     Wire.beginTransmission(_i2cAddr);
     Wire.write(address_bytes[0]);
     Wire.write(address_bytes[1]);
-    auto ret = Wire.endTransmission(false); // Keep the line hot
+    const auto ret = Wire.endTransmission(false); // Keep the line hot
     setError(ret);
     if (ret != 0)
     {
@@ -66,7 +66,7 @@ std::uint8_t MC24FC::readNext()
 {
     // Address the EEPROM as "Read" to read from the written address above
     Wire.requestFrom(_i2cAddr, 1);
-    std::uint8_t val = Wire.read();
+    const std::uint8_t val = Wire.read();
     _currentAddress++;
     return val;
 }
@@ -111,7 +111,7 @@ void MC24FC::writeAt(std::uint16_t offset, const char* buf, std::uint16_t length
         buf_offset += written_size;
         remaining_length -= written_size;
         int ret = 0;
-        ret = Wire.endTransmission(); // Actually end the trasmission so that we don't exceed 32 bytes
+        ret = Wire.endTransmission(); // Actually end the transmission so that we don't exceed 32 bytes
         setError(ret);
         // Non-ACK result at this point is an error.
         if (ret != 0)
@@ -140,11 +140,7 @@ void MC24FC::writeAt(std::uint16_t offset, const char* buf, std::uint16_t length
 std::uint16_t MC24FC::writeIntoPage(std::uint16_t offset, const char* buf, std::uint16_t length,
                                     std::uint16_t i2c_limit) const
 {
-    std::uint16_t page_remaining = offset % _pageSize;
-    if (page_remaining == 0)
-    {
-        page_remaining = _pageSize;
-    }
+    const std::uint16_t page_remaining = _pageSize - offset % _pageSize;
     const auto writable_size = std::min(length, std::min(i2c_limit, page_remaining));
     Wire.write(buf, writable_size);
     return writable_size;
