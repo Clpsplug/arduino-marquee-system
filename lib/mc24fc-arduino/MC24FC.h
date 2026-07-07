@@ -1,69 +1,28 @@
+/**
+ * @file MC24FC.h
+ * @brief API for Microchip Technologies Inc.'s MC24XX32, 64, 128, 256, 512 EEPROMs.
+ *        (XX may be AA, LC, or FC)
+ *        Refer to the official datasheet for valid specific values.
+ * @author ClpsPLUG
+ * @license MIT
+ */
+
 #ifndef MC24FC_H
 #define MC24FC_H
 
 #include <cstdint>
 
 /**
- * MC24FC Error codes. Refer to the doc comment since this enum includes both I2C error and software error.
+ * MC24FC Error codes. Refer to the doc comment for each member, since this enum includes both I2C error and software error.
  */
-enum class MC24FCError: std::uint32_t {
-    /**
-     * @brief No error.
-     */
-    OK,
-
-    /**
-     * @brief I2C buffer overflow on Arduino, did you write too much data?
-     */
-    I2C_BUFFER_OVERFLOW,
-
-    /**
-     * @brief I2C comm was attempted, but nobody answered (NACK on addressing).
-     */
-    WRONG_I2C_ADDRESS,
-
-    /**
-     * @brief The agent (slave) responded with NACK (NACK on data.)
-     */
-    I2C_AGENT_DOESNT_ACK,
-
-    /**
-     * @brief Unknown I2C error. (Wire lib error 4).
-     */
-    UNKNOWN_I2C_ERROR,
-
-    /**
-     * @brief I2C operation itself failed - this probably is a hardware fault.
-     */
-    I2C_FAIL,
-
-    /**
-     * @brief Wire.endTransmission() returned a legitimately unknown error.
-     */
-    I2C_UNIMPLEMENTED_ERROR,
-
-    // Non-I2C errors below
-
-    /**
-     * @brief Detected an invalid param. This is a software fault.
-     */
-    INVALID_PARAMETER = 0x0100,
-
-    /**
-     * @brief Tried to read an out-of-range address. This isn't an I2C error.
-     */
-    ADDRESS_OUT_OF_RANGE,
-
-    /**
-     * @brief You're trying to write more data than the EEPROM's internal buffer can hold.
-     * Check the datasheet.
-     */
-    WRITE_DATA_TOO_LARGE,
-};
+enum class MC24FCError: std::uint32_t;
 
 /**
  * MC24FC EEPROM API for Arduino.
  * The default constructor assumes the EEPROM is MC24FC256.
+ *
+ * @note It is a good practice to call @c MC24FC::getError() after each operation, including initialisation,
+ *       as it may contain error even the functions seem to return just fine.
  */
 class MC24FC {
 public:
@@ -79,11 +38,16 @@ public:
         std::uint32_t page_size = 64
         );
 
-    ~MC24FC();
+    /**
+     * @note This class does NOT call Wire.end() when destructed, as other I2C serial comm might be in progress.
+     */
+    ~MC24FC() = default;
 
     /**
-     * Initialises this EEPROM.
-     * This method performs a quick address ACK check. Call @c getError and check if it returns OK.
+     * Initialises this EEPROM and initialises Arduino's Wire API if it isn't.
+     * This method performs a quick address ACK check. Call @c MC24FC::getError and check if it returns OK.
+     * @see MC24FCError
+     * @see MC24FC::getError
      */
     void init();
 
@@ -146,5 +110,70 @@ private:
     std::uint16_t _currentAddress;
     MC24FCError _error;
 };
+
+/**
+ * MC24FC Error codes. Refer to the doc comment since this enum includes both I2C error and software error.
+ */
+enum class MC24FCError: std::uint32_t {
+    /**
+     * @brief No error.
+     */
+    OK,
+
+    /**
+     * @brief I2C buffer overflow on Arduino, did you write too much data?
+     */
+    I2C_BUFFER_OVERFLOW,
+
+    /**
+     * @brief I2C comm was attempted, but nobody answered (NACK on addressing).
+     */
+    WRONG_I2C_ADDRESS,
+
+    /**
+     * @brief The agent (slave) responded with NACK (NACK on data.)
+     */
+    I2C_AGENT_DOESNT_ACK,
+
+    /**
+     * @brief Unknown I2C error. (Wire lib error 4).
+     */
+    UNKNOWN_I2C_ERROR,
+
+    /**
+     * @brief I2C operation itself failed - this probably is a hardware fault, but most likely, something is miswired.
+     */
+    I2C_FAIL,
+
+    /**
+     * @brief Wire.endTransmission() returned a legitimately unknown error.
+     */
+    I2C_UNIMPLEMENTED_ERROR,
+
+    // Non-I2C errors below
+
+    /**
+     * @brief Detected an invalid param. This is a software fault.
+     */
+    INVALID_PARAMETER = 0x0100,
+
+    /**
+     * @brief Tried to read an out-of-range address. This isn't an I2C error.
+     */
+    ADDRESS_OUT_OF_RANGE,
+
+    /**
+     * @brief You're trying to write more data than the EEPROM's internal buffer can hold.
+     * Check the datasheet.
+     */
+    WRITE_DATA_TOO_LARGE,
+};
+
+// Alternative names for other 24XX EEPROMs
+
+using MC24AA = MC24FC;
+using MC24LC = MC24FC;
+using MC24AAError = MC24FCError;
+using MC24LCError = MC24FCError;
 
 #endif

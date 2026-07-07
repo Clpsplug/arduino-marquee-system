@@ -1,3 +1,12 @@
+/**
+ * @file MC24FC.cpp
+ * @brief API for Microchip Technologies Inc.'s MC24XX32, 64, 128, 256, 512 EEPROMs.
+ *        (XX may be AA, LC, or FC)
+ *        Refer to the official datasheet for valid specific values.
+ * @author ClpsPLUG
+ * @license MIT
+ */
+
 #include "MC24FC.h"
 #include <Wire.h>
 
@@ -10,10 +19,6 @@ MC24FC::MC24FC(std::uint8_t i2c_addr, std::uint32_t max_capacity_bits, std::uint
     , _pageSize(page_size)
     , _currentAddress(0xFFFF) // Keep the address out of bounds.
     , _error(MC24FCError::OK) {
-}
-
-MC24FC::~MC24FC() {
-    Wire.end();
 }
 
 void MC24FC::init() {
@@ -54,7 +59,14 @@ bool MC24FC::readByte(std::uint16_t address, std::uint8_t *data) {
     if (data != nullptr) {
         *data = Wire.read();
     }
-    _currentAddress++;
+    if (
+        _currentAddress >= _maxCapacity / 8
+        || _currentAddress == UINT16_MAX
+    ) {
+        _currentAddress = 0;
+    } else {
+        _currentAddress++;
+    }
     return true;
 }
 
@@ -62,7 +74,14 @@ std::uint8_t MC24FC::readNext() {
     // Address the EEPROM as "Read" to read from the written address above
     Wire.requestFrom(_i2cAddr, 1);
     const std::uint8_t val = Wire.read();
-    _currentAddress++;
+    if (
+        _currentAddress >= _maxCapacity / 8
+        || _currentAddress == UINT16_MAX
+    ) {
+        _currentAddress = 0;
+    } else {
+        _currentAddress++;
+    }
     return val;
 }
 
@@ -78,9 +97,10 @@ std::uint16_t MC24FC::readNextBytes(char *outbuf, std::uint16_t length) {
         outbuf[read_bytes] = static_cast<char>(Wire.read());
         read_bytes++;
         if (
-            _currentAddress >= _maxCapacity / 8 // Probably impossible, but just in case.
+            _currentAddress >= _maxCapacity / 8
             || _currentAddress == UINT16_MAX
         ) {
+            _currentAddress = 0;
             _error = MC24FCError::ADDRESS_OUT_OF_RANGE;
             break;
         }
