@@ -29,17 +29,17 @@ public:
     /**
      * Specify the specs of your EEPROM here.
      * @param i2c_addr I2C address. It should be 0x50 ~ 0x57
-     * @param max_capacity_bits Max capacity in bits
+     * @param max_capacity_kilobits Max capacity in kilobits. If the EEPROM is 24FC256, this is 256.
      * @param page_size Page size, or page buffer size in bytes
      */
     explicit MC24FC(
         std::uint8_t i2c_addr = 0x50,
-        std::uint32_t max_capacity_bits = 256 * 1024,
+        std::uint32_t max_capacity_kilobits = 256,
         std::uint32_t page_size = 64
         );
 
     /**
-     * @note This class does NOT call Wire.end() when destructed, as other I2C serial comm might be in progress.
+     * @note This class does NOT call Wire.end() when destructed, as other I2C serial comms might be in progress.
      */
     ~MC24FC() = default;
 
@@ -105,7 +105,7 @@ private:
     void setError(int wire_return_code);
 
     std::uint8_t _i2cAddr;
-    std::uint32_t _maxCapacity;
+    std::uint32_t _maxCapacityInBits;
     std::uint32_t _pageSize;
     std::uint16_t _currentAddress;
     MC24FCError _error;
@@ -164,7 +164,7 @@ enum class MC24FCError: std::uint32_t {
 
     /**
      * @brief You're trying to write more data than the EEPROM's internal buffer can hold.
-     * Check the datasheet.
+     * Check the datasheet and construct an MC24FC instance with the correct page size.
      */
     WRITE_DATA_TOO_LARGE,
 };

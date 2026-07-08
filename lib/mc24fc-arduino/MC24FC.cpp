@@ -10,14 +10,24 @@
 #include "MC24FC.h"
 #include <Wire.h>
 
-// FIXME: Could Arduino Uno R4 hold more than this?
-constexpr uint16_t MAX_I2C_BUFFER_SIZE = 32;
+// Try to poll maximum I2C buffer size by using macro for the board, if available.
+// Seeed Studio boards may or may not define those.
+#if defined(I2C_BUFFER_LENGTH)
+// On Arduino Uno, usually 32, but on R4 this could be 255. On ESP32, this is likely 128.
+constexpr std::uint16_t MAX_I2C_BUFFER_SIZE = I2C_BUFFER_LENGTH;
+#elif defined(BUFFER_SIZE)
+// ESP8266. Likely 128.
+constexpr std::uint16_t MAX_I2C_BUFFER_SIZE = BUFFER_SIZE;
+#else
+// The ultimate fallback is 32 byte
+constexpr std::uint16_t MAX_I2C_BUFFER_SIZE = 32;
+#endif
 
-MC24FC::MC24FC(std::uint8_t i2c_addr, std::uint32_t max_capacity_bits, std::uint32_t page_size) :
+MC24FC::MC24FC(std::uint8_t i2c_addr, std::uint32_t max_capacity_kilobits, std::uint32_t page_size) :
     _i2cAddr(i2c_addr & 0x7F) // Address is 7-bit
-    , _maxCapacity(max_capacity_bits)
+    , _maxCapacityInBits(max_capacity_kilobits * 1024)
     , _pageSize(page_size)
-    , _currentAddress(0xFFFF) // Keep the address out of bounds.
+    , _currentAddress(0xFFFF) // Keep the address out of bounds (well, except for 512 EEPROM)
     , _error(MC24FCError::OK) {
 }
 
@@ -31,7 +41,7 @@ void MC24FC::init() {
 
 bool MC24FC::readByte(std::uint16_t address, std::uint8_t *data) {
     _currentAddress = address;
-    if (_currentAddress >= _maxCapacity / 8) {
+    if (_currentAddress >= _maxCapacityInBits / 8) {
         _error = MC24FCError::ADDRESS_OUT_OF_RANGE;
         return false;
     }
@@ -60,7 +70,7 @@ bool MC24FC::readByte(std::uint16_t address, std::uint8_t *data) {
         *data = Wire.read();
     }
     if (
-        _currentAddress >= _maxCapacity / 8
+        _currentAddress >= _maxCapacityInBits / 8
         || _currentAddress == UINT16_MAX
     ) {
         _currentAddress = 0;
@@ -75,7 +85,7 @@ std::uint8_t MC24FC::readNext() {
     Wire.requestFrom(_i2cAddr, 1);
     const std::uint8_t val = Wire.read();
     if (
-        _currentAddress >= _maxCapacity / 8
+        _currentAddress >= _maxCapacityInBits / 8
         || _currentAddress == UINT16_MAX
     ) {
         _currentAddress = 0;
@@ -97,7 +107,7 @@ std::uint16_t MC24FC::readNextBytes(char *outbuf, std::uint16_t length) {
         outbuf[read_bytes] = static_cast<char>(Wire.read());
         read_bytes++;
         if (
-            _currentAddress >= _maxCapacity / 8
+            _currentAddress >= _maxCapacityInBits / 8
             || _currentAddress == UINT16_MAX
         ) {
             _currentAddress = 0;
